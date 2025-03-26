@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="數學遊戲 - 練習加減乘法運算">
+    <title>數學遊戲</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .zhuyin {
+            font-family: "MingLiU-ExtB", "標楷體", "DFKai-SB", serif;
+            font-size: 1.1em;
+        }
+        
+        /* ... existing styles ... */
+    </style>
+</head>
+<body>
+    <main class="game-container">
+        <section class="game-box" role="region" aria-label="遊戲區域">
+            <div id="problem" class="problem" role="group" aria-label="數學問題">
+                <div class="problem-row">
+                    <div class="number1" 
+                         role="textbox" 
+                         aria-label="第一個數字"
+                         contenteditable="true"
+                         onkeypress="handleNumberInput(event, this)"
+                         onblur="checkCurrentAnswer()">___</div>
+                </div>
+                <div class="problem-row">
+                    <div class="operator" aria-hidden="true">+</div>
+                    <div class="number2" 
+                         role="textbox" 
+                         aria-label="第二個數字"
+                         contenteditable="true"
+                         onkeypress="handleNumberInput(event, this)"
+                         onblur="checkCurrentAnswer()">___</div>
+                </div>
+                <div class="divider" aria-hidden="true"></div>
+                <div class="problem-row">
+                    <div class="result" 
+                         role="textbox" 
+                         aria-label="計算結果"
+                         contenteditable="true"
+                         onkeypress="handleNumberInput(event, this)"
+                         onblur="checkCurrentAnswer()">___</div>
+                </div>
+            </div>
+
+            <div class="score-container">
+                <div id="score" class="score" role="status" aria-live="polite">
+                    答對：0 題，答錯：0 題
+                </div>
+                <button class="check-btn" 
+                        onclick="checkCurrentAnswer()"
+                        aria-label="確認答案">
+                    確認
+                </button>
+            </div>
+
+            <div class="button-group">
+                <button class="prev-btn" 
+                        onclick="showPreviousProblem()"
+                        aria-label="上一題">
+                    上一題
+                </button>
+                <button class="next-btn" 
+                        onclick="generateNewProblem()"
+                        aria-label="下一題">
+                    下一題
+                </button>
+                <button class="show-answer-btn" 
+                        onclick="showAnswer()"
+                        aria-label="查看答案">
+                    看答案
+                </button>
+                <button class="submit-btn" 
+                        onclick="showSubmitConfirm()"
+                        aria-label="交卷">
+                    交卷
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 答案模態框 -->
+    <div id="answerModal" class="modal" role="dialog" aria-labelledby="answerModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" 
+                    onclick="closeModal()"
+                    aria-label="關閉">
+                &times;
+            </button>
+            <h2 id="answerModalTitle" class="visually-hidden">答案詳解</h2>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- 輸入模態框 -->
+    <div id="inputModal" class="modal" role="dialog" aria-labelledby="inputModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <h2 id="inputModalTitle" class="visually-hidden">輸入數字</h2>
+            <input type="number" 
+                   id="numberInput" 
+                   class="number-input" 
+                   placeholder="請輸入數字"
+                   aria-label="數字輸入">
+            <button onclick="submitNumber()"
+                    aria-label="確認輸入">
+                確認
+            </button>
+        </div>
+    </div>
+
+    <!-- 提示模態框 -->
+    <div id="alertModal" class="modal" role="alertdialog" aria-labelledby="alertModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <h2 id="alertModalTitle" class="visually-hidden">提示訊息</h2>
+            <p id="alertMessage"></p>
+            <button onclick="closeAlert()"
+                    aria-label="確定">
+                確定
+            </button>
+        </div>
+    </div>
+
+    <!-- 交卷確認模態框 -->
+    <div id="submitModal" class="modal" role="dialog" aria-labelledby="submitModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <h2 id="submitModalTitle" class="visually-hidden">交卷確認</h2>
+            <p>您已經回答了 <span id="answeredCount">0</span> 題，還有 <span id="remainingCount">20</span> 題未回答。</p>
+            <p>確定要交卷嗎？</p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" 
+                        onclick="closeSubmitModal()"
+                        aria-label="取消交卷">
+                    取消
+                </button>
+                <button class="confirm-btn" 
+                        onclick="submitExam()"
+                        aria-label="確認交卷">
+                    確認
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結果畫面 -->
+    <div id="resultScreen" class="result-screen" role="dialog" aria-labelledby="resultTitle" aria-hidden="true">
+        <div class="result-content">
+            <h2 id="resultTitle" class="visually-hidden">考試結果</h2>
+            <div class="result-emoji">
+                <img id="resultFace" 
+                     src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f600.svg" 
+                     alt="結果表情"
+                     width="180"
+                     height="180">
+            </div>
+            <div class="result-score">
+                <p>答對：<span id="finalCorrect">0</span> 題</p>
+                <p>答錯：<span id="finalIncorrect">0</span> 題</p>
+                <p>總分：<span id="finalScore">0</span> 分</p>
+            </div>
+            <button class="restart-btn" 
+                    onclick="restartGame()"
+                    aria-label="重新開始">
+                重新開始
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
